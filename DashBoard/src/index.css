@@ -1,0 +1,91 @@
+/* src/index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+
+  body {
+    @apply bg-panel font-sans text-white antialiased;
+    background-image:
+      radial-gradient(ellipse at top, rgba(0, 212, 255, 0.04) 0%, transparent 60%),
+      linear-gradient(180deg, #0d1117 0%, #0a0d13 100%);
+    min-height: 100vh;
+  }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { @apply bg-panel; }
+  ::-webkit-scrollbar-thumb { @apply bg-panel-border rounded-full; }
+}
+
+@layer components {
+  /* ── Panel card ─────────────────────────────────────────────────── */
+  .panel-card {
+    @apply bg-panel-light border border-panel-border rounded-xl shadow-panel;
+    background: linear-gradient(135deg, rgba(22,27,34,0.95) 0%, rgba(13,17,23,0.98) 100%);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+
+  /* ── Metric card ────────────────────────────────────────────────── */
+  .metric-card {
+    @apply bg-panel border border-panel-border rounded-lg p-3;
+    background: rgba(13,17,23,0.8);
+  }
+
+  /* ── Glow button base ───────────────────────────────────────────── */
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200
+           flex items-center justify-center gap-2 cursor-pointer select-none
+           disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-accent {
+    @apply btn bg-accent/20 border border-accent/40 text-accent
+           hover:bg-accent/30 hover:shadow-accent-glow active:scale-95;
+  }
+
+  .btn-danger {
+    @apply btn bg-danger/20 border border-danger/40 text-danger
+           hover:bg-danger/30 hover:shadow-danger-glow active:scale-95;
+  }
+
+  .btn-success {
+    @apply btn bg-success/20 border border-success/40 text-success
+           hover:bg-success/30 active:scale-95;
+  }
+
+  .btn-ghost {
+    @apply btn border border-panel-border text-muted
+           hover:border-accent/40 hover:text-accent active:scale-95;
+  }
+
+  /* ── Control key ────────────────────────────────────────────────── */
+  .control-key {
+    @apply w-14 h-14 rounded-xl border border-panel-border flex items-center justify-center
+           cursor-pointer transition-all duration-150 select-none
+           text-muted hover:text-white hover:border-accent/60;
+    background: rgba(22,27,34,0.8);
+  }
+
+  .control-key:active,
+  .control-key.active {
+    @apply text-accent border-accent;
+    background: rgba(0,212,255,0.1);
+    box-shadow: 0 0 16px rgba(0,212,255,0.25);
+  }
+
+  /* ── Section label ──────────────────────────────────────────────── */
+  .section-label {
+    @apply text-xs font-semibold uppercase tracking-widest text-muted mb-2;
+  }
+
+  /* ── Telemetry value ────────────────────────────────────────────── */
+  .tele-value {
+    @apply font-mono text-lg font-medium text-white tabular-nums;
+  }
+
+  .tele-label {
+    @apply text-xs text-muted uppercase tracking-wide;
+  }
+}
