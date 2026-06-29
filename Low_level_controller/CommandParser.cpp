@@ -1,5 +1,6 @@
 // CommandParser.cpp
 // Incremental line-based command parser for Serial commands from Raspberry Pi
+// Uses CMD_ prefixed enum values to avoid AFMotor.h macro collisions
 
 #include "CommandParser.h"
 #include <string.h>
@@ -7,7 +8,7 @@
 
 CommandParser::CommandParser() : _idx(0) {
     memset(_buf, 0, sizeof(_buf));
-    _parsed = {RobotCmd::NONE, 0};
+    _parsed = {RobotCmd::CMD_NONE, 0};
 }
 
 bool CommandParser::feed(char c) {
@@ -51,27 +52,27 @@ bool CommandParser::_parse() {
 
     _parsed.speed = speedVal;
 
-    // Map command string to enum
+    // Map command string to enum (CMD_ prefixed to avoid AFMotor macro clash)
     if (strcmp(cmdStr, "FORWARD") == 0) {
-        _parsed.cmd = RobotCmd::FORWARD;
+        _parsed.cmd = RobotCmd::CMD_FORWARD;
     } else if (strcmp(cmdStr, "BACKWARD") == 0) {
-        _parsed.cmd = RobotCmd::BACKWARD;
+        _parsed.cmd = RobotCmd::CMD_BACKWARD;
     } else if (strcmp(cmdStr, "LEFT") == 0) {
-        _parsed.cmd = RobotCmd::TURN_LEFT;
+        _parsed.cmd = RobotCmd::CMD_TURN_LEFT;
     } else if (strcmp(cmdStr, "RIGHT") == 0) {
-        _parsed.cmd = RobotCmd::TURN_RIGHT;
+        _parsed.cmd = RobotCmd::CMD_TURN_RIGHT;
     } else if (strcmp(cmdStr, "STOP") == 0) {
-        _parsed.cmd = RobotCmd::STOP;
+        _parsed.cmd = RobotCmd::CMD_STOP;
         _parsed.speed = 0;
     } else if (strcmp(cmdStr, "ESTOP") == 0) {
-        _parsed.cmd = RobotCmd::ESTOP;
+        _parsed.cmd = RobotCmd::CMD_ESTOP;
         _parsed.speed = 0;
     } else if (strcmp(cmdStr, "SET_SPEED") == 0) {
-        _parsed.cmd = RobotCmd::SET_SPEED;
+        _parsed.cmd = RobotCmd::CMD_SET_SPEED;
     } else if (strcmp(cmdStr, "PING") == 0) {
-        _parsed.cmd = RobotCmd::PING;
+        _parsed.cmd = RobotCmd::CMD_PING;
     } else {
-        _parsed.cmd = RobotCmd::NONE;
+        _parsed.cmd = RobotCmd::CMD_NONE;
         return false;
     }
 

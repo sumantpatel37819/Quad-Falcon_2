@@ -2,7 +2,15 @@
 // Parses text commands received over Serial from Raspberry Pi
 // Protocol: one command per line, terminated by '\n'
 //
-// Supported commands:
+// *** IMPORTANT ***
+// AFMotor.h defines these as raw C preprocessor macros:
+//   #define FORWARD  1
+//   #define BACKWARD 2
+//   #define BRAKE    3
+//   #define RELEASE  4
+// Our enum uses CMD_ prefix on all values to avoid the macro clash.
+//
+// Supported commands (as text strings from Pi):
 //   FORWARD <speed>      Move forward at given speed (0-255)
 //   BACKWARD <speed>     Move backward
 //   LEFT <speed>         Turn left (spin in place)
@@ -17,21 +25,23 @@
 
 #include <Arduino.h>
 
+// All values prefixed with CMD_ to avoid collision with AFMotor.h macros
+// (AFMotor.h: #define FORWARD 1, #define BACKWARD 2, etc.)
 enum class RobotCmd {
-    NONE,
-    FORWARD,
-    BACKWARD,
-    TURN_LEFT,
-    TURN_RIGHT,
-    STOP,
-    ESTOP,
-    SET_SPEED,
-    PING
+    CMD_NONE,
+    CMD_FORWARD,
+    CMD_BACKWARD,
+    CMD_TURN_LEFT,
+    CMD_TURN_RIGHT,
+    CMD_STOP,
+    CMD_ESTOP,
+    CMD_SET_SPEED,
+    CMD_PING
 };
 
 struct ParsedCommand {
     RobotCmd cmd;
-    uint8_t  speed;      // 0–255, valid for FORWARD/BACKWARD/LEFT/RIGHT/SET_SPEED
+    uint8_t  speed;   // 0-255, valid for FORWARD/BACKWARD/LEFT/RIGHT/SET_SPEED
 };
 
 class CommandParser {

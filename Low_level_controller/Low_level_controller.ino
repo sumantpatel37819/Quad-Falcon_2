@@ -47,7 +47,7 @@ MotorControl      motors;
 IMUReader         imu;
 GPSReader         gps;
 CommandParser     parser;
-TelemetrySerializer telemetry;
+// TelemetrySerializer is now fully static, no instance needed
 
 // State tracking
 bool       eStopActive       = false;
@@ -66,12 +66,17 @@ void setup() {
     motors.stop();
 
     // IMU init
+    // Wire.begin() MUST be called here in setup before imu.begin().
+    // imu.begin() also calls Wire.begin() internally — calling twice is safe.
     Wire.begin();
+    delay(500);   // Wait for MPU6050 to power up (important after motor shield init)
     if (!imu.begin()) {
-        Serial.println("{\"err\":\"IMU_INIT_FAIL\"}");
+        // If you see this error:
+        //   1. Check SDA→A4, SCL→A5 wiring
+        //   2. Check MPU6050 VCC is 3.3V or 5V (both work)
+        //   3. Check AD0 pin — if HIGH, address is 0x69 (change in MPU6050.h)
+        Serial.println("{\"err\":\"IMU_INIT_FAIL\",\"hint\":\"Check SDA=A4 SCL=A5 wiring\"}");
     } else {
-        // Calibrate gyro — keep robot still during this ~1 second window
-        imu.calibrate(200);
         Serial.println("{\"status\":\"IMU_READY\"}");
     }
 
@@ -88,46 +93,46 @@ void setup() {
 // ======================== HELPERS ==============================
 
 void executeCommand(const ParsedCommand& cmd) {
-    if (eStopActive && cmd.cmd != RobotCmd::STOP && cmd.cmd != RobotCmd::ESTOP) {
+    if (eStopActive && cmd.cmd != RobotCmd::CMD_STOP && cmd.cmd != RobotCmd::CMD_ESTOP) {
         // Reject all motion commands during e-stop
         return;
     }
 
     switch (cmd.cmd) {
-        case RobotCmd::FORWARD:
+        case RobotCmd::CMD_FORWARD:
             motors.forward(cmd.speed > 0 ? cmd.speed : currentSpeed);
             strncpy(lastCmdStr, "FORWARD", sizeof(lastCmdStr));
             currentSpeed = cmd.speed > 0 ? cmd.speed : currentSpeed;
             lastCmdTime = millis();
             break;
 
-        case RobotCmd::BACKWARD:
+        case RobotCmd::CMD_BACKWARD:
             motors.backward(cmd.speed > 0 ? cmd.speed : currentSpeed);
             strncpy(lastCmdStr, "BACKWARD", sizeof(lastCmdStr));
             currentSpeed = cmd.speed > 0 ? cmd.speed : currentSpeed;
             lastCmdTime = millis();
             break;
 
-        case RobotCmd::TURN_LEFT:
+        case RobotCmd::CMD_TURN_LEFT:
             motors.turnLeft(cmd.speed > 0 ? cmd.speed : currentSpeed);
             strncpy(lastCmdStr, "LEFT", sizeof(lastCmdStr));
             lastCmdTime = millis();
             break;
 
-        case RobotCmd::TURN_RIGHT:
+        case RobotCmd::CMD_TURN_RIGHT:
             motors.turnRight(cmd.speed > 0 ? cmd.speed : currentSpeed);
             strncpy(lastCmdStr, "RIGHT", sizeof(lastCmdStr));
             lastCmdTime = millis();
             break;
 
-        case RobotCmd::STOP:
+        case RobotCmd::CMD_STOP:
             motors.stop();
             strncpy(lastCmdStr, "STOP", sizeof(lastCmdStr));
             eStopActive = false;  // STOP also clears e-stop latch
             lastCmdTime = millis();
             break;
 
-        case RobotCmd::ESTOP:
+        case RobotCmd::CMD_ESTOP:
             motors.stop();
             eStopActive = true;
             strncpy(lastCmdStr, "ESTOP", sizeof(lastCmdStr));
@@ -135,14 +140,14 @@ void executeCommand(const ParsedCommand& cmd) {
             lastCmdTime = millis();
             break;
 
-        case RobotCmd::SET_SPEED:
+        case RobotCmd::CMD_SET_SPEED:
             currentSpeed = cmd.speed;
             motors.setSpeed(currentSpeed);
             strncpy(lastCmdStr, "SET_SPEED", sizeof(lastCmdStr));
             lastCmdTime = millis();
             break;
 
-        case RobotCmd::PING:
+        case RobotCmd::CMD_PING:
             Serial.println("{\"pong\":1}");
             lastCmdTime = millis();
             break;
@@ -167,21 +172,25 @@ void sendTelemetry() {
     imu.update();
     gps.update();
 
-    const char* packet = telemetry.buildPacket(
+    TelemetrySerializer::sendPacket(
         imu.getYaw(),
         imu.getPitch(),
         imu.getRoll(),
+        imu.getGyroZ(),      // Yaw rate (deg/s)
+        imu.getLinAccX(),    // Linear accel X (gravity removed)
+        imu.getLinAccY(),
+        imu.getLinAccZ(),
         gps.getLat(),
         gps.getLon(),
+        gps.getAltitude(),   // Altitude in metres (M8N provides this)
         gps.isValid(),
         gps.getSatCount(),
+        gps.getHDOP(),       // M8N HDOP — accuracy indicator
         gps.getSpeed(),
         currentSpeed,
         lastCmdStr,
         eStopActive
     );
-
-    Serial.println(packet);
 }
 
 // ======================== MAIN LOOP ============================
